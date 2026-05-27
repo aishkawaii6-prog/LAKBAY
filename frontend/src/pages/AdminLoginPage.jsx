@@ -1,0 +1,241 @@
+// ═══════════════════════════════════════════════════════════
+//  src/pages/AdminLoginPage.jsx  — Standalone Admin Login
+// ═══════════════════════════════════════════════════════════
+
+import { useState, useEffect, useRef } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { useAuth } from '../context/AuthContext'
+
+// Password field component
+const PwdField = ({ id, label: lbl, value, onChange, show, onToggle, placeholder, autoComplete }) => {
+  const fieldWrap = { marginBottom: 13 }
+  const labelStyle = {
+    display: 'block', fontSize: '0.72rem', fontWeight: 700,
+    color: 'var(--muted)', marginBottom: 5, letterSpacing: '0.05em',
+    textTransform: 'uppercase',
+  }
+  const inputWrap = {
+    position: 'relative', borderRadius: 10, overflow: 'hidden',
+    border: '1.5px solid var(--border)', background: 'var(--bg)',
+    transition: 'border-color 0.2s, box-shadow 0.2s',
+  }
+  const inputCss = {
+    width: '100%', padding: '10px 14px', paddingRight: 44,
+    fontSize: '0.9rem', background: 'transparent', border: 'none',
+    outline: 'none', color: 'var(--text)', fontFamily: "'DM Sans', system-ui, sans-serif",
+  }
+  const eyeBtn = {
+    position: 'absolute', right: 0, top: 0, bottom: 0, width: 42,
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
+    background: 'none', border: 'none', cursor: 'pointer', color: 'var(--muted)', fontSize: 14,
+  }
+
+  return (
+    <div style={fieldWrap}>
+      <label style={labelStyle} htmlFor={id}>{lbl}</label>
+      <div style={inputWrap} className="lc-input-wrap">
+        <input 
+          id={id} 
+          type={show ? 'text' : 'password'} 
+          value={value}
+          onChange={onChange} 
+          style={inputCss}
+          placeholder={placeholder || '••••••••'}
+          autoComplete={autoComplete || 'current-password'} 
+        />
+        <button 
+          type="button" 
+          style={eyeBtn} 
+          onClick={onToggle}
+          aria-label={show ? 'Hide password' : 'Show password'}
+        >
+          {show ? '🙈' : '👁️'}
+        </button>
+      </div>
+    </div>
+  )
+}
+
+export default function AdminLoginPage() {
+  const { adminLogin } = useAuth()
+  const navigate = useNavigate()
+  
+  const [shake, setShake] = useState(false)
+  const [msg,   setMsg]   = useState(null)
+
+  // Login fields
+  const [email,    setEmail]    = useState('')
+  const [password, setPassword] = useState('')
+  const [showPwd,  setShowPwd]  = useState(false)
+  const [loading,  setLoading]  = useState(false)
+
+  const firstRef = useRef(null)
+
+  useEffect(() => {
+    if (firstRef.current) firstRef.current.focus()
+  }, [])
+
+  useEffect(() => {
+    const onKey = (e) => { if (e.key === 'Escape') navigate('/') }
+    document.addEventListener('keydown', onKey)
+    return () => document.removeEventListener('keydown', onKey)
+  }, [navigate])
+
+  // ── Submit handler ──
+  const handleLogin = async (e) => {
+    e.preventDefault(); setMsg(null)
+    setLoading(true)
+    try {
+      await adminLogin(email.trim(), password)
+      navigate('/')
+    } catch (error) {
+      setMsg({ type: 'error', text: error.message || 'Invalid admin credentials.' })
+      setShake(true); setTimeout(() => setShake(false), 600)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  /* ── Style helpers ── */
+  const overlay = {
+    position: 'fixed', inset: 0, zIndex: 9000,
+    background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(7px)',
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
+    padding: '20px', animation: 'fadeIn 0.2s ease',
+  }
+  const container = {
+    minHeight: '100vh', display: 'flex', flexDirection: 'column',
+    alignItems: 'center', justifyContent: 'center', padding: '20px',
+  }
+  const card = {
+    background: 'var(--card)', borderRadius: 22,
+    padding: '40px 38px 32px', width: '100%', maxWidth: 430,
+    boxShadow: '0 36px 90px rgba(0,0,0,0.3)', position: 'relative',
+    animation: shake ? 'lcShake 0.5s ease' : 'lcSlideUp 0.28s cubic-bezier(0.34,1.56,0.64,1)',
+  }
+  const badge = {
+    width: 50, height: 50, borderRadius: 13,
+    background: 'linear-gradient(135deg, #1a6b4a 0%, #2d9e72 100%)',
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
+    fontSize: 22, marginBottom: 14, boxShadow: '0 6px 18px rgba(26,107,74,0.35)',
+  }
+  const fieldWrap = { marginBottom: 13 }
+  const labelStyle = {
+    display: 'block', fontSize: '0.72rem', fontWeight: 700,
+    color: 'var(--muted)', marginBottom: 5, letterSpacing: '0.05em',
+    textTransform: 'uppercase',
+  }
+  const inputWrap = {
+    position: 'relative', borderRadius: 10, overflow: 'hidden',
+    border: '1.5px solid var(--border)', background: 'var(--bg)',
+    transition: 'border-color 0.2s, box-shadow 0.2s',
+  }
+  const inputCss = (hasPad) => ({
+    width: '100%', padding: '10px 14px', paddingRight: hasPad ? 44 : 14,
+    fontSize: '0.9rem', background: 'transparent', border: 'none',
+    outline: 'none', color: 'var(--text)', fontFamily: "'DM Sans', system-ui, sans-serif",
+  })
+  const eyeBtn = {
+    position: 'absolute', right: 0, top: 0, bottom: 0, width: 42,
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
+    background: 'none', border: 'none', cursor: 'pointer', color: 'var(--muted)', fontSize: 14,
+  }
+  const msgBox = (type) => ({
+    background: type === 'success' ? '#f0fdf4' : '#fef2f2',
+    border: `1px solid ${type === 'success' ? '#bbf7d0' : '#fecaca'}`,
+    borderRadius: 8, padding: '9px 13px', marginBottom: 13,
+    display: 'flex', alignItems: 'center', gap: 7,
+    fontSize: '0.81rem', color: type === 'success' ? '#166534' : '#dc2626',
+    animation: 'fadeIn 0.2s ease',
+  })
+  const submitBtn = (loading, disabled) => ({
+    width: '100%', padding: '12px', border: 'none', borderRadius: 10,
+    cursor: (loading || disabled) ? 'not-allowed' : 'pointer',
+    background: (loading || disabled)
+      ? 'var(--border)'
+      : 'linear-gradient(135deg, #1a6b4a 0%, #2d9e72 100%)',
+    color: (loading || disabled) ? 'var(--muted)' : '#fff',
+    fontSize: '0.91rem', fontWeight: 600,
+    fontFamily: "'DM Sans', system-ui, sans-serif",
+    transition: 'opacity 0.2s, transform 0.15s',
+    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+    marginTop: 4,
+    boxShadow: (loading || disabled) ? 'none' : '0 4px 14px rgba(26,107,74,0.32)',
+  })
+  const backBtn = {
+    background: 'none', border: 'none', cursor: 'pointer',
+    color: 'var(--muted)', fontSize: '0.81rem', fontWeight: 600,
+    fontFamily: "'DM Sans', system-ui, sans-serif",
+    textDecoration: 'underline', textUnderlineOffset: 2, padding: 0,
+    marginTop: 16, display: 'block', textAlign: 'center',
+  }
+
+  return (
+    <>
+      <style>{`
+        @keyframes lcSlideUp {
+          from { opacity:0; transform:translateY(22px) scale(0.97); }
+          to   { opacity:1; transform:none; }
+        }
+        @keyframes lcShake {
+          0%,100%{transform:translateX(0)} 20%{transform:translateX(-7px)}
+          40%{transform:translateX(7px)} 60%{transform:translateX(-5px)} 80%{transform:translateX(5px)}
+        }
+        .lc-input-wrap:focus-within {
+          border-color: #1a6b4a !important;
+          box-shadow: 0 0 0 3px rgba(26,107,74,0.12) !important;
+        }
+        .lc-submit:hover:not(:disabled) { opacity:0.9; transform:translateY(-1px); }
+        .lc-close { position:absolute; top:14px; right:14px; width:32px; height:32px;
+          border-radius:8px; background:var(--border); border:none; cursor:pointer;
+          display:flex; align-items:center; justify-content:center;
+          font-size:15px; color:var(--muted); transition:background 0.2s; }
+        .lc-close:hover { background:var(--border) !important; filter:brightness(0.88); }
+      `}</style>
+
+      <div style={overlay} onClick={(e) => { if (e.target === e.currentTarget) navigate('/') }}>
+        <div style={card}>
+          <button className="lc-close" onClick={() => navigate('/')} aria-label="Close">✕</button>
+
+          <div style={badge}>🌿</div>
+          <div style={{ fontFamily:"'Playfair Display',Georgia,serif", fontSize:'1.35rem', fontWeight:700, color:'var(--text)', marginBottom:3 }}>
+            Admin Login
+          </div>
+          <div style={{ fontSize:'0.8rem', color:'var(--muted)', marginBottom:20 }}>
+            Lakbay Tourism Management System — Authorized Personnel Only
+          </div>
+
+          {msg && <div style={msgBox(msg.type)}><span>{msg.type==='success'?'✅':'⚠️'}</span> {msg.text}</div>}
+
+          <form onSubmit={handleLogin} noValidate>
+            <div style={fieldWrap}>
+              <label style={labelStyle} htmlFor="admin-email">Email Address</label>
+              <div style={inputWrap} className="lc-input-wrap">
+                <input id="admin-email" ref={firstRef} type="email"
+                  value={email} onChange={e => setEmail(e.target.value)}
+                  style={inputCss(false)} placeholder="admin@lakbay.com"
+                  autoComplete="username" required />
+              </div>
+            </div>
+            <PwdField id="admin-pwd" label="Password"
+              value={password} onChange={e => setPassword(e.target.value)}
+              show={showPwd} onToggle={() => setShowPwd(v => !v)} />
+
+            <button type="submit" className="lc-submit"
+              style={submitBtn(loading, !email || !password)}
+              disabled={loading || !email || !password}>
+              {loading
+                ? <><span style={{animation:'spin 0.8s linear infinite',display:'inline-block'}}>⏳</span> Verifying…</>
+                : <>🔐 Access Admin Dashboard</>}
+            </button>
+          </form>
+
+
+          <button style={backBtn} onClick={() => navigate('/')}>
+            ← Back to Homepage
+          </button>
+        </div>
+      </div>
+    </>
+  )
+}
